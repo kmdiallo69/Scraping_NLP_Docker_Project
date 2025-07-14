@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # FastAPI Application
+  api:
+    build:
+      context: ./fastapi
+      dockerfile: Dockerfile
+    container_name: toxiguard-api
+    ports:
+      - "8000:80"
+    volumes:
+      - ./fastapi/model:/app/model
+      - ./data:/app/data
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Development environment (optional)
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: toxiguard-dev
+    volumes:
+      - .:/app
+      - /app/__pycache__
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: tail -f /dev/null  # Keep container running
+    profiles:
+      - development
+
+# Networks
+networks:
+  default:
+    name: toxiguard-network
+
+# Volumes
+volumes:
+  model_data:
+    driver: local
+  app_data:
+    driver: local 
